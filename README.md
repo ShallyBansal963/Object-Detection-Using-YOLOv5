@@ -1,163 +1,52 @@
-# Object Detection Using YOLO Object Detector
+# Object Detection Using YOLOv5
 
-This project demonstrates object detection in images Deep Learning, OpenCV, and Python. I utilize the **YOLOv5** (You Only Look Once version 5) model, specifically trained on the **COCO dataset**.
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Dataset](#dataset)
-- [Data Analysis](#data-analysis)
-- [Preprocessing](#preprocessing)
-- [Installation](#installation)
-- [Running the Project](#running-the-project)
-- [Screenshots](#screenshots)
-- [Cloning YOLOv5 Repository](#cloning-yolov5-repository)
+This project implements object detection in both images and video streams using Deep Learning, OpenCV, and Python, specifically employing the YOLOv5 model. YOLOv5 is known for its speed and accuracy in detecting objects in real-time, making it an excellent choice for various applications.
 
 ## Overview
 
-The **COCO (Common Objects in Context)** dataset contains 80 labels, including but not limited to:
+In this project, we utilize the YOLOv5 model to detect and classify objects in images. The model is pre-trained on the COCO (Common Objects in Context) dataset, which contains a diverse range of images and annotations. The dataset comprises 80 object categories, including but not limited to:
 
+- People
 - Bicycles
 - Cars and trucks
 - Airplanes
 - Stop signs and fire hydrants
-- Various animals (e.g., cats, dogs, birds, horses, cows, sheep)
-- Kitchen and dining objects (e.g., wine glasses, forks, knives, spoons)
+- Animals (e.g., cats, dogs, birds, horses, cows, sheep)
+- Kitchen and dining items (e.g., wine glasses, cups, forks, knives, spoons)
 
-For a complete list of what YOLO can detect, please refer to the [COCO dataset website](http://cocodataset.org/#home).
-
-## Dataset
-
-We download the COCO dataset, which consists of images and annotations, directly from the official COCO website. The following Python script facilitates the download and extraction of the dataset:
-
-# Object Detection Using YOLO Object Detector
-
-This project demonstrates object detection in both images and video streams using Deep Learning, OpenCV, and Python. We utilize the **YOLOv3** (You Only Look Once version 3) model, specifically trained on the **COCO dataset**.
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Dataset](#dataset)
-- [Data Analysis](#data-analysis)
-- [Preprocessing](#preprocessing)
-- [Installation](#installation)
-- [Running the Project](#running-the-project)
-- [Screenshots](#screenshots)
-- [Cloning YOLOv5 Repository](#cloning-yolov5-repository)
-
-## Overview
-
-The **COCO (Common Objects in Context)** dataset contains 80 labels, including but not limited to:
-
-- Bicycles
-- Cars and trucks
-- Airplanes
-- Stop signs and fire hydrants
-- Various animals (e.g., cats, dogs, birds, horses, cows, sheep)
-- Kitchen and dining objects (e.g., wine glasses, forks, knives, spoons)
-
-For a complete list of what YOLO can detect, please refer to the [COCO dataset website](http://cocodataset.org/#home).
+You can find the full list of categories that YOLO is trained to detect in the [COCO dataset documentation](https://cocodataset.org/#home).
 
 ## Dataset
 
-We download the COCO dataset, which consists of images and annotations, directly from the official COCO website. The following Python script facilitates the download and extraction of the dataset:
+The COCO dataset is used for training and testing the model. It is a large-scale dataset designed for various visual recognition tasks. The dataset provides images with annotations for multiple objects, which allows for effective training of the YOLOv5 model.
 
-import os
-import requests
-import zipfile
-from tqdm import tqdm
-from sklearn.model_selection import train_test_split
+## Installation
 
-# COCO dataset URLs
-coco_images_url = "http://images.cocodataset.org/zips/train2017.zip"
-coco_annotations_url = "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
-save_dir = "./data/COCO"
-
-def download_and_extract(url, save_dir, file_name):
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    file_path = os.path.join(save_dir, file_name)
-    if not os.path.exists(file_path):
-        response = requests.get(url, stream=True)
-        with open(file_path, 'wb') as f:
-            for chunk in tqdm(response.iter_content(1024)):
-                f.write(chunk)
-    with zipfile.ZipFile(file_path, 'r') as zip_ref:
-        zip_ref.extractall(save_dir)
-
-def split_dataset(dataset_dir, test_size=0.2):
-    image_files = [f for f in os.listdir(dataset_dir) if f.endswith('.jpg')]
-    train_files, test_files = train_test_split(image_files, test_size=test_size, random_state=42)
-    return train_files, test_files
-
-# Downloading COCO dataset
-download_and_extract(coco_images_url, save_dir, "train2017.zip")
-download_and_extract(coco_annotations_url, save_dir, "annotations_trainval2017.zip")
-
-# Split dataset into training and testing sets
-train_files, test_files = split_dataset(os.path.join(save_dir, 'train2017'))
-print(f"Training files: {len(train_files)}, Testing files: {len(test_files)}")
-
-Data Analysis
-
-We can analyze the dataset annotations and visualize the distribution of object categories with the following code snippet:
-
-python
-Copy code
-import json
-import matplotlib.pyplot as plt
-from collections import Counter
-
-# Load COCO annotations
-with open('./data/COCO/annotations/instances_train2017.json') as f:
-    annotations = json.load(f)
-
-# Create a mapping of category IDs to category names
-category_mapping = {cat['id']: cat['name'] for cat in annotations['categories']}
-category_ids = [ann['category_id'] for ann in annotations['annotations']]
-category_counts = Counter(category_ids)
-
-# Generate a bar chart for the top object categories
-category_names = [category_mapping[cat_id] for cat_id in category_counts.keys()]
-category_values = list(category_counts.values())
-
-plt.figure(figsize=(12, 8))
-plt.barh(category_names, category_values, color='skyblue')
-plt.title('Distribution of Object Categories in COCO Dataset')
-plt.xlabel('Number of Instances')
-plt.ylabel('Category')
-plt.show()
-Preprocessing
-
-The images will undergo preprocessing to fit the YOLO model's input requirements. The following pipeline resizes and augments the images:
-
-from PIL import Image
-from torchvision import transforms
-
-# Preprocessing pipeline for COCO images
-preprocess = transforms.Compose([
-    transforms.Resize((416, 416)),  # Resize image to 416x416 (YOLO input size)
-    transforms.RandomHorizontalFlip(),  # Data augmentation: random flip
-    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),  # Color adjustments
-    transforms.ToTensor(),  # Convert image to Tensor
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize (for ImageNet pre-trained models)
-])
-Installation
-
-Before running the project, ensure the required libraries installed. We can install them using pip:
+To run this project, you'll need to install the necessary dependencies. You can do this by running the following commands:
 
 pip install numpy
 pip install opencv-python
+pip install torch torchvision torchaudio
+pip install matplotlib
 
-To perform object detection, use the following command in your terminal:
+## Running the Project
 
-python yolo.py --image images/baggage_claim.jpg
-Screenshots
+After setting up the environment, you can run the object detection model on an image by executing:
 
-Here are some results showcasing YOLO's object detection capabilities:
+python yolo.py --image path/to/your/image.jpg
+You can also modify the yolo.py script to process video streams or batches of images, depending on your application needs.
+
+## YOLOv5 Model Files
+
+This project uses the pre-trained YOLOv5 model files provided by the Ultralytics team. You can find the YOLOv5 repository here to explore additional features and capabilities.
+
+## Conclusion
+
+This object detection project demonstrates the capabilities of the YOLOv5 model in identifying and localizing various objects in images and video streams. The results highlight YOLOv5's efficiency and accuracy, making it a powerful tool for real-time object detection applications.
+
+## Acknowledgments
+
+Special thanks to the authors of the YOLOv5 model and the creators of the COCO dataset for their invaluable contributions to the field of computer vision.
 
 
-To clone the YOLOv5 repository, execute the following command:
 
-
-git clone https://github.com/ultralytics/yolov5  # Clone YOLOv5 repository
